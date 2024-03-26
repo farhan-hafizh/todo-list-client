@@ -1,34 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios'; // Assuming you're using Axios for API calls
+import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import CreateTaskForm from './components/CreateTaskForm';
+import { deleteTaskAction, fetchAllTasksAction } from '../../api'; 
+import { formatDueDate } from '../../helper/timeHelper';
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/tasks');
+        const response = await fetchAllTasksAction();
         setTasks(response.data);
       } catch (error) {
         console.error('Error fetching tasks:', error);
-        // Handle errors (e.g., display error message to user)
       }
     };
 
     fetchTasks();
-  }, []); // Empty dependency array: fetch only on initial render
+  }, []); 
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await axios.delete(`/api/tasks/${taskId}`);
+      await deleteTaskAction(taskId);
       setTasks(tasks.filter((task) => task.id !== taskId));
     } catch (error) {
       console.error('Error deleting task:', error);
-      // Handle errors (e.g., display error message to user)
     }
   };
 
@@ -40,24 +40,54 @@ function Tasks() {
             setIsCreatingTask(false);
             setTasks([...tasks, newTask]);
           }}
+          onClose={() => setIsCreatingTask(false)}
         />
       ) : (
         <>
-          <h1 className="text-2xl font-bold mb-8">Your Tasks</h1>
-          <ul className="list-none">
-            {tasks.map((task) => (
-              <li key={task.id} className="flex items-center justify-between mb-4 bg-gray-100 p-4 rounded-md shadow-sm">
-                <Link to={`/tasks/${task.id}`} className="text-lg font-medium">
-                  {task.title}
-                </Link>
-                <span className={`${task.completed ? 'text-green-500' : 'text-red-500'} font-bold`}>
-                  {task.completed ? 'Completed' : 'To-Do'}
-                </span>
-                <Button text="Delete" onClick={() => handleDeleteTask(task.id)} className="bg-red-600" />
-              </li>
-            ))}
-          </ul>
-          <Button onClick={() => setIsCreatingTask(true)} className="bg-blue-500" text="Create New Task" />
+          {/* Task List with Column Titles and Navigation */}
+          <table className="table-auto w-full">
+            <thead>
+              <tr>
+                <th className="px-4 py-2 text-left font-medium">Title</th>
+                <th className="px-4 py-2 text-left font-medium">Status</th>
+                <th className="px-4 py-2 text-left font-medium">Due Date</th>
+                <th className="px-4 py-2 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tasks.length > 0 ? (
+                tasks.map((task) => (
+                    <tr onClick={()=> navigate(`/tasks/${task.id}`)} className="bg-white border-b hover:bg-gray-100 cursor-pointer">
+                      <td className="px-4 py-2">{task.title}</td>
+                      <td className="px-4 py-2">
+                        <span
+                          className={`${task.completed ? 'text-green-500' : 'text-red-500'} font-bold`}
+                        >
+                          {task.completed ? 'Completed' : 'To-Do'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">{task.due_date && formatDueDate(task.due_date)}</td>
+                      <td className="px-4 py-2 text-right">
+                        <Button text="Delete" 
+                          onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTask(task.id)
+                        }} className="bg-red-600" />
+                      </td>
+                    </tr>
+                ))
+              ) : (
+                <tr className="text-center">
+                  <td colSpan={4}>No tasks found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Button to Create New Task */}
+          <div className="mt-4 text-right">
+            <Button onClick={() => setIsCreatingTask(true)} className="bg-blue-500" text="Create New Task" />
+          </div>
         </>
       )}
     </div>

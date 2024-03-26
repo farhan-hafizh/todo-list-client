@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Import your React components
 import Home from './pages/Home';
 import Tasks from './pages/Tasks';
 import TaskDetail from './pages/TaskDetail';
@@ -11,8 +10,8 @@ import Navbar from './components/Navbar';
 function App() {
   return (
     <Router>
-      <Navbar /> {/* Add the Navbar component here */}
-      <div className="container mx-auto px-4 py-8"> {/* Wrap your content with a container */}
+      <Navbar /> 
+      <div className="container mx-auto px-4 py-8"> 
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tasks" element={<Tasks />} />

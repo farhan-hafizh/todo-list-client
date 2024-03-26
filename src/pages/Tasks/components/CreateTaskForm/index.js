@@ -1,86 +1,95 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { createTaskAction } from '../../../../api';
+import Button from '../../../../components/Button';
+import { getDefaultDueDate } from '../../../../helper/timeHelper';
 
-function CreateTaskForm({ onSubmit }) {
+function CreateTaskForm({ onSubmit, onClose }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState(''); // Optional: Add state for due date
+  const [dueDate, setDueDate] = useState(''); 
 
   const handleSubmit = async (event) => {
-    event.preventDefault(); // Prevent default form submission behavior
+    event.preventDefault(); 
     try {
       const newTask = {
         title,
         description,
-        due_date: formatDueDate(dueDate), // Format due date before sending
+        due_date: formatDueDate(dueDate), 
       };
-      const response = await axios.post('http://127.0.0.1:8000/api/tasks', newTask);
-      onSubmit(response.data); // Call the provided onSubmit function with the created task data
-      setTitle(''); // Clear form fields after successful submission
+      const response = await createTaskAction(newTask);
+      onSubmit(response.data); 
+      setTitle('');
       setDescription('');
-      setDueDate(''); // Optional: Clear due date state after submission
+      setDueDate(''); 
     } catch (error) {
       console.error('Error creating task:', error);
-      // Handle errors (e.g., display error message to user)
     }
   };
 
   const formatDueDate = (userDueDate) => {
-    // If no due date is provided, set default to 24:00:00
-    if (!userDueDate) {
-      return '2024-03-25 24:00:00'; // Today's date with default time
-    }
+  if (!userDueDate) {
+    return getDefaultDueDate();
+  }
+  const parsedDate = new Date(userDueDate);
 
-    // Attempt to parse user-provided due date (assuming format YYYY-MM-DD)
-    const parsedDate = new Date(userDueDate);
-    if (parsedDate.getTime()) { // Check if valid date object
-      // Format date with desired format (no square brackets)
-      return parsedDate.toISOString().slice(0, 19).replace('T', ' ');
-    } else {
-      // Handle invalid user input (e.g., display error message)
-      console.error('Invalid due date format:', userDueDate);
-      // You can choose to return an empty string or a default value here
-      return '';
-    }
-  };
+  if (parsedDate.getTime()) {
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0'); 
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    const hours = String(parsedDate.getHours()).padStart(2, '0');
+    const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:00`;
+  } else {
+    console.error('Invalid due date format:', userDueDate);
+    return null; 
+  }
+};
+
 
   return (
-    <form onSubmit={handleSubmit} className="create-task-form">
-      <h2>Create New Task</h2>
-      <div className="form-group">
-        <label htmlFor="title">Title:</label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          required
-        />
-      </div>
-      <div className="form-group">
-        <label htmlFor="description">Description (optional):</label>
-        <textarea
-          id="description"
-          name="description"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-        />
-      </div>
-      <div className="form-group"> {/* Optional: Due date input */}
-        <label htmlFor="due-date">Due Date (optional):</label>
-        <input
-          type="datetime-local" // Use 'date' for just date selection
-          id="due-date"
-          name="due_date"
-          value={dueDate}
-          onChange={(event) => setDueDate(event.target.value)}
-        />
-      </div>
-      <button type="submit" className="btn btn-primary">
-        Create Task
-      </button>
-    </form>
+   <form onSubmit={handleSubmit} className="create-task-form space-y-4">
+  <h2>Create New Task</h2>
+  <div className="form-group flex items-center">
+    <label htmlFor="title" className="w-1/4 text-sm font-medium">Title:</label>
+    <input
+      type="text"
+      id="title"
+      name="title"
+      value={title}
+      onChange={(event) => setTitle(event.target.value)}
+      required
+      className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+    />
+  </div>
+  <div className="form-group">
+    <label htmlFor="description" className="text-sm font-medium">Description (optional):</label>
+    <textarea
+      id="description"
+      name="description"
+      value={description}
+      onChange={(event) => setDescription(event.target.value)}
+      className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+    />
+  </div>
+  <div className="form-group flex items-center">
+    <label htmlFor="due-date" className="w-1/4 text-sm font-medium">Due Date (optional):</label>
+    <input
+      type="datetime-local"
+      id="due-date"
+      name="due_date"
+      value={dueDate}
+      onChange={(event) => setDueDate(event.target.value)}
+      className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+    />
+  </div>
+
+  <button type="submit" className="btn-primary px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+    Create Task
+  </button>
+  <Button onClick={onClose} text="Cancel" className="bg-red-500 ml-4"/>
+</form>
+
   );
 }
 
